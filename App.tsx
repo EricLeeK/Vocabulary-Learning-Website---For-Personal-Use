@@ -13,8 +13,35 @@ import {
   PlayCircle,
   RefreshCw,
   Download,
-  X
+  X,
+  Volume2,
+  Copy,
+  ClipboardCopy,
+  Eye
 } from 'lucide-react';
+
+// Text-to-Speech helper function
+const speak = (text: string, lang: 'en-US' | 'ja-JP') => {
+  if ('speechSynthesis' in window) {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = 0.9; // Slightly slower for clarity
+
+    // Try to find a native voice for the language
+    const voices = window.speechSynthesis.getVoices();
+    const nativeVoice = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+    if (nativeVoice) {
+      utterance.voice = nativeVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  } else {
+    alert('Your browser does not support text-to-speech.');
+  }
+};
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('HOME');
@@ -146,8 +173,21 @@ const App: React.FC = () => {
                     onStartReview={() => setView('REVIEW')}
                     onImageUpdate={async (img) => {
                       await wordService.updateGroupImage(activeGroup.id, img);
-                      setActiveGroup({ ...activeGroup, imageUrl: img });
-                      await refreshGroups();
+                      const groups = await wordService.getGroups();
+                      const updated = groups.find(g => g.id === activeGroup.id);
+                      if (updated) setActiveGroup(updated);
+                    }}
+                    onAddImage={async (img) => {
+                      await wordService.addGroupImage(activeGroup.id, img);
+                      const groups = await wordService.getGroups();
+                      const updated = groups.find(g => g.id === activeGroup.id);
+                      if (updated) setActiveGroup(updated);
+                    }}
+                    onDeleteImage={async (index) => {
+                      await wordService.deleteGroupImage(activeGroup.id, index);
+                      const groups = await wordService.getGroups();
+                      const updated = groups.find(g => g.id === activeGroup.id);
+                      if (updated) setActiveGroup(updated);
                     }}
                   />
                 )}
@@ -182,6 +222,18 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+// --- Sub-Components ---
+
+
+
+
+
+
+
+
+
+
 
 // --- Sub-Components ---
 
@@ -424,8 +476,13 @@ const StudyView: React.FC<{
   onEdit: () => void;
   onStartReview: () => void;
   onImageUpdate: (base64: string) => void;
-}> = ({ group, onEdit, onStartReview, onImageUpdate }) => {
+  onAddImage: (base64: string) => Promise<void>;
+  onDeleteImage: (index: number) => Promise<void>;
+}> = ({ group, onEdit, onStartReview, onImageUpdate, onAddImage, onDeleteImage }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const visualFileInputRef = useRef<HTMLInputElement>(null);
+  const [showImages, setShowImages] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -437,6 +494,31 @@ const StudyView: React.FC<{
       reader.readAsDataURL(file);
     }
   };
+
+  const handleVisualUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        await onAddImage(reader.result as string);
+      } catch (err) {
+        alert('Failed to upload image');
+      } finally {
+        setUploading(false);
+        if (visualFileInputRef.current) visualFileInputRef.current.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteImage = async (index: number) => {
+    if (!window.confirm('Delete this image?')) return;
+    await onDeleteImage(index);
+  };
+
+  const allImages = group.imageUrls || [];
 
   return (
     <div className="space-y-8">
@@ -474,53 +556,168 @@ const StudyView: React.FC<{
         />
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h2 className="text-3xl font-black">{group.title}</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={async () => {
+              const words = group.words.filter(w => w.term.trim()).map(w => w.term).join('\n');
+              await navigator.clipboard.writeText(words);
+              alert('Words copied to clipboard!');
+            }}
+            className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl border-2 border-black text-sm font-bold transition-colors"
+            title="Copy all words to clipboard"
+          >
+            <Copy size={16} /> Copy Words
+          </button>
+          {group.imageUrl && (
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch(group.imageUrl!);
+                  const blob = await response.blob();
+                  await navigator.clipboard.write([
+                    new ClipboardItem({ [blob.type]: blob })
+                  ]);
+                  alert('Image copied to clipboard!');
+                } catch (err) {
+                  alert('Failed to copy image. Your browser may not support this feature.');
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl border-2 border-black text-sm font-bold transition-colors"
+              title="Copy image to clipboard"
+            >
+              <ClipboardCopy size={16} /> Copy Image
+            </button>
+          )}
           <Button variant="secondary" onClick={onEdit} icon={<BookOpen size={20} />}>Edit</Button>
+          <Button
+            variant={showImages ? "primary" : "secondary"}
+            onClick={() => setShowImages(!showImages)}
+            icon={<Eye size={20} />}
+          >
+            {showImages ? 'Words' : 'Visualization'}
+          </Button>
           <Button variant="success" onClick={onStartReview} icon={<PlayCircle size={20} />}>Test</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {group.words.filter(w => w.term).map((word, idx) => (
-          <div key={word.id} className="bg-white p-6 rounded-2xl border-2 border-black flex flex-col md:flex-row gap-6 items-start hover:bg-toon-yellow/20 transition-colors">
-            <div className="bg-toon-blue font-bold w-12 h-12 flex items-center justify-center rounded-full border-2 border-black shrink-0 text-xl">
-              {idx + 1}
+      {/* Toggle between Words and Images view */}
+      {showImages ? (
+        /* Images Gallery View */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600">Additional visualization images</p>
+            <button
+              onClick={() => visualFileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 px-4 py-2 bg-toon-blue hover:bg-toon-blue/80 rounded-xl border-2 border-black font-bold transition-colors"
+            >
+              {uploading ? (
+                <><RefreshCw size={18} className="animate-spin" /> Uploading...</>
+              ) : (
+                <><Plus size={18} /> Add Image</>
+              )}
+            </button>
+            <input
+              type="file"
+              ref={visualFileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleVisualUpload}
+            />
+          </div>
+
+          {allImages.length === 0 ? (
+            <div className="text-center py-16 border-4 border-dashed border-gray-300 rounded-3xl">
+              <ImageIcon size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-400 font-bold">No additional images yet</p>
+              <p className="text-gray-400 text-sm">Click "Add Image" to upload visualization images</p>
             </div>
-
-            <div className="flex-1 w-full">
-              <p className="font-black text-3xl mb-4 border-b-2 border-gray-100 pb-2">{word.term}</p>
-
-              <div className="space-y-3">
-                {word.meaningCn && (
-                  <div className="flex items-start gap-2">
-                    <span className="shrink-0 bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold mt-1">CN</span>
-                    <p className="text-lg text-gray-800 leading-snug">{word.meaningCn}</p>
+          ) : (
+            <div className="flex flex-col gap-8">
+              {allImages.map((url, idx) => (
+                <div key={idx} className="relative group pt-6 pl-6">
+                  <div className="border-4 border-black rounded-3xl overflow-hidden shadow-comic bg-white relative">
+                    <img
+                      src={url}
+                      alt={`Visualization ${idx + 1}`}
+                      className="w-full h-auto min-h-[300px] object-contain bg-gray-50"
+                    />
+                    <button
+                      onClick={() => handleDeleteImage(idx)}
+                      className="absolute top-4 right-4 p-3 bg-red-500 text-white rounded-xl border-2 border-black opacity-0 group-hover:opacity-100 transition-opacity shadow-comic hover:bg-red-600 z-10"
+                      title="Delete image"
+                    >
+                      <Trash2 size={24} />
+                    </button>
                   </div>
-                )}
-                {word.meaningEn && (
-                  <div className="flex items-start gap-2">
-                    <span className="shrink-0 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold mt-1">EN</span>
-                    <p className="text-lg text-gray-800 leading-snug font-medium italic">{word.meaningEn}</p>
+                  <div className="absolute top-0 left-0 flex items-center justify-center bg-black text-white w-12 h-12 rounded-xl text-xl font-black border-2 border-white shadow-lg z-20">
+                    <span className="leading-none">#{idx + 1}</span>
                   </div>
-                )}
-                {word.meaningJp && (
-                  <div className="flex items-start gap-2">
-                    <span className="shrink-0 bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded font-bold mt-1">JP</span>
-                    <div className="text-xl text-gray-800 leading-snug font-serif">
-                      <ruby>
-                        {word.meaningJp}
-                        <rt className="text-xs text-gray-500 font-sans tracking-wide">{word.meaningJpReading}</rt>
-                      </ruby>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Words List View */
+        <div className="grid grid-cols-1 gap-4">
+          {group.words.filter(w => w.term).map((word, idx) => (
+            <div key={word.id} className="bg-white p-6 rounded-2xl border-2 border-black flex flex-col md:flex-row gap-6 items-start hover:bg-toon-yellow/20 transition-colors">
+              <div className="bg-toon-blue font-bold w-12 h-12 flex items-center justify-center rounded-full border-2 border-black shrink-0 text-xl">
+                {idx + 1}
+              </div>
+
+              <div className="flex-1 w-full">
+                <div className="flex items-center gap-3 mb-4 border-b-2 border-gray-100 pb-2">
+                  <p className="font-black text-3xl">{word.term}</p>
+                  <button
+                    onClick={() => speak(word.term, 'en-US')}
+                    className="p-2 hover:bg-blue-100 rounded-full transition-colors text-blue-600"
+                    title="Listen to English pronunciation"
+                  >
+                    <Volume2 size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {word.meaningCn && (
+                    <div className="flex items-start gap-2">
+                      <span className="shrink-0 bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold mt-1">CN</span>
+                      <p className="text-lg text-gray-800 leading-snug">{word.meaningCn}</p>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {word.meaningEn && (
+                    <div className="flex items-start gap-2">
+                      <span className="shrink-0 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold mt-1">EN</span>
+                      <p className="text-lg text-gray-800 leading-snug font-medium italic">{word.meaningEn}</p>
+                    </div>
+                  )}
+                  {word.meaningJp && (
+                    <div className="flex items-start gap-2">
+                      <span className="shrink-0 bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded font-bold mt-1">JP</span>
+                      <div className="text-xl text-gray-800 leading-snug font-serif flex items-center gap-2">
+                        <ruby>
+                          {word.meaningJp}
+                          <rt className="text-xs text-gray-500 font-sans tracking-wide">{word.meaningJpReading}</rt>
+                        </ruby>
+                        <button
+                          onClick={() => speak(word.meaningJpReading || word.meaningJp, 'ja-JP')}
+                          className="p-1.5 hover:bg-gray-200 rounded-full transition-colors text-gray-600"
+                          title="Listen to Japanese pronunciation"
+                        >
+                          <Volume2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

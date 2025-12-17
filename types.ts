@@ -11,7 +11,8 @@ export interface WordGroup {
   id: string;
   title: string; // e.g., "Day 1", "Fruits"
   createdAt: number;
-  imageUrl?: string; // Base64 or URL for the user's drawing
+  imageUrl?: string; // First/main image (kept for backward compatibility)
+  imageUrls?: string[]; // Array of additional images
   words: Word[];
   lastScore?: number;
   passed?: boolean;

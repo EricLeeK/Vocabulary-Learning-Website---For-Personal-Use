@@ -158,14 +158,86 @@ app.delete('/api/groups/:id', (req, res) => {
             return res.status(404).json({ error: 'Group not found' });
         }
 
-        // Delete associated image file
+        // Delete main image file
         deleteImageFile(existing.imageUrl);
+
+        // Delete all additional images
+        if (existing.imageUrls && Array.isArray(existing.imageUrls)) {
+            existing.imageUrls.forEach(url => deleteImageFile(url));
+        }
 
         deleteGroup(req.params.id);
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting group:', error);
         res.status(500).json({ error: 'Failed to delete group' });
+    }
+});
+
+// POST add additional image to group
+app.post('/api/groups/:id/images', (req, res) => {
+    try {
+        const existing = getGroup(req.params.id);
+        if (!existing) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        const { image } = req.body;
+        if (!image || !image.startsWith('data:image/')) {
+            return res.status(400).json({ error: 'Invalid image data' });
+        }
+
+        // Save the image file
+        const imageUrl = saveBase64Image(image, req.params.id);
+
+        // Add to imageUrls array
+        const imageUrls = existing.imageUrls || [];
+        imageUrls.push(imageUrl);
+
+        const updated = {
+            ...existing,
+            imageUrls
+        };
+
+        saveGroup(updated);
+        res.status(201).json(updated);
+    } catch (error) {
+        console.error('Error adding image:', error);
+        res.status(500).json({ error: 'Failed to add image' });
+    }
+});
+
+// DELETE additional image from group
+app.delete('/api/groups/:id/images/:index', (req, res) => {
+    try {
+        const existing = getGroup(req.params.id);
+        if (!existing) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
+
+        const index = parseInt(req.params.index);
+        const imageUrls = existing.imageUrls || [];
+
+        if (index < 0 || index >= imageUrls.length) {
+            return res.status(400).json({ error: 'Invalid image index' });
+        }
+
+        // Delete the image file
+        deleteImageFile(imageUrls[index]);
+
+        // Remove from array
+        imageUrls.splice(index, 1);
+
+        const updated = {
+            ...existing,
+            imageUrls
+        };
+
+        saveGroup(updated);
+        res.json(updated);
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({ error: 'Failed to delete image' });
     }
 });
 

@@ -71,7 +71,7 @@ export const createEmptyGroup = (): WordGroup => {
   };
 };
 
-// Update group image
+// Update group image (main/first image)
 export const updateGroupImage = async (groupId: string, base64Image: string): Promise<void> => {
   try {
     await fetch(`${API_BASE}/groups/${groupId}`, {
@@ -81,6 +81,30 @@ export const updateGroupImage = async (groupId: string, base64Image: string): Pr
     });
   } catch (error) {
     console.error('Error updating group image:', error);
+  }
+};
+
+// Add additional image to group
+export const addGroupImage = async (groupId: string, base64Image: string): Promise<void> => {
+  try {
+    await fetch(`${API_BASE}/groups/${groupId}/images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64Image })
+    });
+  } catch (error) {
+    console.error('Error adding group image:', error);
+  }
+};
+
+// Delete additional image from group
+export const deleteGroupImage = async (groupId: string, imageIndex: number): Promise<void> => {
+  try {
+    await fetch(`${API_BASE}/groups/${groupId}/images/${imageIndex}`, {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('Error deleting group image:', error);
   }
 };
 
