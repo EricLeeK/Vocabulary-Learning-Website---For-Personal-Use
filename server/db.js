@@ -1,0 +1,111 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dataPath = path.join(__dirname, 'data.json');
+
+// Initialize data file if it doesn't exist
+const initializeData = () => {
+    if (!fs.existsSync(dataPath)) {
+        const seedData = [
+            {
+                id: 'seed-day-1',
+                title: 'Day 1',
+                createdAt: Date.now() - 172800000,
+                passed: false,
+                words: [
+                    { id: 'd1-1', term: 'prominent', meaningCn: '卓越的，显著的', meaningEn: 'important or famous', meaningJp: '傑出した', meaningJpReading: 'けっしゅつした' },
+                    { id: 'd1-2', term: 'inadequate', meaningCn: '不充分的', meaningEn: 'not good enough', meaningJp: '不十分な', meaningJpReading: 'ふじゅうぶんな' },
+                    { id: 'd1-3', term: 'ambiguous', meaningCn: '模棱两可的', meaningEn: 'open to more than one interpretation', meaningJp: '曖昧な', meaningJpReading: 'あいまいな' },
+                    { id: 'd1-4', term: 'inherent', meaningCn: '固有的', meaningEn: 'existing as a permanent attribute', meaningJp: '固有の', meaningJpReading: 'こゆうの' },
+                    { id: 'd1-5', term: 'viable', meaningCn: '可行的', meaningEn: 'capable of working successfully', meaningJp: '実行可能な', meaningJpReading: 'じっこうかのうな' },
+                    { id: 'd1-6', term: 'plausible', meaningCn: '看似合理的', meaningEn: 'seeming reasonable or probable', meaningJp: 'もっともらしい', meaningJpReading: '' },
+                    { id: 'd1-7', term: 'naive', meaningCn: '天真的', meaningEn: 'showing a lack of experience', meaningJp: '世間知らずな', meaningJpReading: 'せけんしらずな' },
+                    { id: 'd1-8', term: 'strive', meaningCn: '努力', meaningEn: 'make great efforts to achieve', meaningJp: '努力する', meaningJpReading: 'どりょくする' },
+                    { id: 'd1-9', term: 'abundance', meaningCn: '丰富', meaningEn: 'a very large quantity of something', meaningJp: '豊富', meaningJpReading: 'ほうふ' },
+                    { id: 'd1-10', term: 'deployment', meaningCn: '部署', meaningEn: 'bringing resources into effective action', meaningJp: '配備', meaningJpReading: 'はいび' },
+                ]
+            },
+            {
+                id: 'seed-day-2',
+                title: 'Day 2',
+                createdAt: Date.now() - 86400000,
+                passed: false,
+                words: [
+                    { id: 'd2-1', term: 'intuition', meaningCn: '直觉', meaningEn: 'ability to understand immediately', meaningJp: '直感', meaningJpReading: 'ちょっかん' },
+                    { id: 'd2-2', term: 'prejudice', meaningCn: '偏见', meaningEn: 'preconceived opinion not based on reason', meaningJp: '偏見', meaningJpReading: 'へんけん' },
+                    { id: 'd2-3', term: 'frail', meaningCn: '脆弱的', meaningEn: 'weak and delicate', meaningJp: '虚弱な', meaningJpReading: 'きょじゃくな' },
+                    { id: 'd2-4', term: 'scramble', meaningCn: '争夺，攀登', meaningEn: 'make one\'s way quickly or awkwardly', meaningJp: 'よじ登る', meaningJpReading: 'よじのぼる' },
+                    { id: 'd2-5', term: 'disconnect', meaningCn: '断开', meaningEn: 'break the connection', meaningJp: '切断', meaningJpReading: 'せつだん' },
+                    { id: 'd2-6', term: 'deficiency', meaningCn: '缺乏', meaningEn: 'a lack or shortage', meaningJp: '欠乏', meaningJpReading: 'けつぼう' },
+                    { id: 'd2-7', term: 'animated', meaningCn: '生机勃勃的', meaningEn: 'full of life or excitement', meaningJp: '生き生きとした', meaningJpReading: 'いきいきとした' },
+                    { id: 'd2-8', term: 'abstract', meaningCn: '抽象的', meaningEn: 'existing in thought but not physical', meaningJp: '抽象的な', meaningJpReading: 'ちゅうしょうてきな' },
+                    { id: 'd2-9', term: 'analogy', meaningCn: '类比', meaningEn: 'a comparison between two things', meaningJp: '類推', meaningJpReading: 'るいすい' },
+                    { id: 'd2-10', term: 'adequate', meaningCn: '足够的', meaningEn: 'satisfactory or acceptable', meaningJp: '十分な', meaningJpReading: 'じゅうぶんな' },
+                ]
+            },
+            {
+                id: 'seed-day-3',
+                title: 'Day 3',
+                createdAt: Date.now(),
+                passed: false,
+                words: [
+                    { id: 'd3-1', term: 'fundamental', meaningCn: '基础的', meaningEn: 'forming a necessary base or core', meaningJp: '基本的な', meaningJpReading: 'きほんてきな' },
+                    { id: 'd3-2', term: 'comprehend', meaningCn: '理解', meaningEn: 'grasp mentally; understand', meaningJp: '理解する', meaningJpReading: 'りかいする' },
+                    { id: 'd3-3', term: 'distinguish', meaningCn: '区分', meaningEn: 'recognize as different', meaningJp: '区別する', meaningJpReading: 'くべつする' },
+                    { id: 'd3-4', term: 'discipline', meaningCn: '纪律', meaningEn: 'practice of training people to obey rules', meaningJp: '規律', meaningJpReading: 'きりつ' },
+                    { id: 'd3-5', term: 'capability', meaningCn: '能力', meaningEn: 'the power or ability to do something', meaningJp: '能力', meaningJpReading: 'のうりょく' },
+                    { id: 'd3-6', term: 'merit', meaningCn: '优点', meaningEn: 'quality of being particularly good', meaningJp: 'メリット', meaningJpReading: '' },
+                    { id: 'd3-7', term: 'contradict', meaningCn: '反驳', meaningEn: 'deny the truth by asserting the opposite', meaningJp: '矛盾する', meaningJpReading: 'むじゅんする' },
+                    { id: 'd3-8', term: 'regulation', meaningCn: '规定', meaningEn: 'a rule or directive', meaningJp: '規制', meaningJpReading: 'きせい' },
+                    { id: 'd3-9', term: 'execution', meaningCn: '执行', meaningEn: 'the carrying out of a plan', meaningJp: '実行', meaningJpReading: 'じっこう' },
+                    { id: 'd3-10', term: 'domain', meaningCn: '领域', meaningEn: 'an area of territory owned or controlled', meaningJp: '領域', meaningJpReading: 'りょういき' },
+                ]
+            }
+        ];
+        fs.writeFileSync(dataPath, JSON.stringify(seedData, null, 2), 'utf-8');
+        console.log('Data file initialized with seed data');
+    }
+};
+
+// Read all groups
+export const getGroups = () => {
+    initializeData();
+    const data = fs.readFileSync(dataPath, 'utf-8');
+    return JSON.parse(data);
+};
+
+// Save all groups
+export const saveGroups = (groups) => {
+    fs.writeFileSync(dataPath, JSON.stringify(groups, null, 2), 'utf-8');
+};
+
+// Get single group by ID
+export const getGroup = (id) => {
+    const groups = getGroups();
+    return groups.find(g => g.id === id);
+};
+
+// Create or update a group
+export const saveGroup = (group) => {
+    const groups = getGroups();
+    const existingIndex = groups.findIndex(g => g.id === group.id);
+
+    if (existingIndex >= 0) {
+        groups[existingIndex] = group;
+    } else {
+        groups.push(group);
+    }
+
+    saveGroups(groups);
+    return group;
+};
+
+// Delete a group
+export const deleteGroup = (id) => {
+    const groups = getGroups().filter(g => g.id !== id);
+    saveGroups(groups);
+};
+
+export default { getGroups, saveGroups, getGroup, saveGroup, deleteGroup };
