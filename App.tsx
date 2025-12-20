@@ -18,7 +18,8 @@ import {
   Copy,
   ClipboardCopy,
   Eye,
-  FileText
+  FileText,
+  Wrench
 } from 'lucide-react';
 
 // Text-to-Speech helper function
@@ -156,7 +157,7 @@ const App: React.FC = () => {
                     onSelect={handleSelectGroup}
                     onDelete={handleDeleteGroup}
                     onImport={() => setShowImportModal(true)}
-                    onArticlePicker={() => setView('ARTICLE_PICKER')}
+                    onToolbox={() => setView('TOOLBOX')}
                   />
                 )}
 
@@ -207,6 +208,10 @@ const App: React.FC = () => {
                     }}
                     onExit={() => setView('STUDY')}
                   />
+                )}
+
+                {view === 'TOOLBOX' && (
+                  <ToolboxView onSelectTool={(tool) => setView(tool as ViewState)} />
                 )}
 
                 {view === 'ARTICLE_PICKER' && (
@@ -346,13 +351,13 @@ const HomeView: React.FC<{
   onSelect: (g: WordGroup) => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
   onImport: () => void;
-  onArticlePicker: () => void;
-}> = ({ groups, onCreate, onSelect, onDelete, onImport, onArticlePicker }) => (
+  onToolbox: () => void;
+}> = ({ groups, onCreate, onSelect, onDelete, onImport, onToolbox }) => (
   <div className="space-y-6">
     <div className="flex justify-between items-end flex-wrap gap-2">
       <p className="text-xl font-bold text-gray-500">My Daily Words</p>
       <div className="flex gap-2 flex-wrap">
-        <Button variant="secondary" onClick={onArticlePicker} icon={<FileText size={20} />}>Article Picker</Button>
+        <Button variant="secondary" onClick={onToolbox} icon={<Wrench size={20} />}>Toolbox</Button>
         <Button variant="secondary" onClick={onImport} icon={<Download size={20} />}>Import JSON</Button>
         <Button onClick={onCreate} icon={<Plus size={24} />}>New Day</Button>
       </div>
@@ -869,6 +874,74 @@ const ReviewView: React.FC<{
           />
           <Button type="submit" className="w-full py-4 text-xl">Next</Button>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// Toolbox View Component - Tool Selection Page
+const ToolboxView: React.FC<{
+  onSelectTool: (tool: string) => void;
+}> = ({ onSelectTool }) => {
+  // Define available tools
+  const tools = [
+    {
+      id: 'ARTICLE_PICKER',
+      name: 'Article Picker',
+      description: 'Extract words from articles',
+      icon: <FileText size={40} />,
+      color: 'bg-toon-pink'
+    },
+    // Add more tools here in the future
+    // {
+    //   id: 'TOOL_ID',
+    //   name: 'Tool Name',
+    //   description: 'Tool description',
+    //   icon: <IconComponent size={40} />,
+    //   color: 'bg-toon-blue'
+    // },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-black flex items-center justify-center gap-3">
+          <span className="bg-toon-yellow border-4 border-black rounded-full p-2">🧰</span>
+          Toolbox
+        </h2>
+        <p className="text-gray-500 font-bold mt-2">Select a tool to get started</p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        {tools.map((tool) => (
+          <button
+            key={tool.id}
+            onClick={() => onSelectTool(tool.id)}
+            className="group flex flex-col items-center p-6 bg-white border-4 border-black rounded-3xl shadow-comic hover:shadow-comic-lg hover:-translate-y-1 transition-all duration-200"
+          >
+            {/* Icon Container - Rounded Square */}
+            <div className={`
+              w-20 h-20 ${tool.color} border-4 border-black rounded-2xl
+              flex items-center justify-center mb-4
+              group-hover:scale-110 transition-transform duration-200
+            `}>
+              {tool.icon}
+            </div>
+            {/* Tool Name */}
+            <span className="font-black text-lg text-center">{tool.name}</span>
+            {/* Tool Description */}
+            <span className="text-sm text-gray-500 text-center mt-1">{tool.description}</span>
+          </button>
+        ))}
+
+        {/* Placeholder for future tools */}
+        <div className="flex flex-col items-center p-6 bg-gray-50 border-4 border-dashed border-gray-300 rounded-3xl opacity-50">
+          <div className="w-20 h-20 bg-gray-200 border-4 border-dashed border-gray-400 rounded-2xl flex items-center justify-center mb-4">
+            <Plus size={40} className="text-gray-400" />
+          </div>
+          <span className="font-bold text-gray-400">More Coming</span>
+          <span className="text-sm text-gray-400 text-center mt-1">Stay tuned!</span>
+        </div>
       </div>
     </div>
   );
