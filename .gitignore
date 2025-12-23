@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (API keys, secrets)
+.env
+.env.local
+.env.*.local
+
+# Server data (user-generated content)
+server/images/
+server/data.json
+
+# Batch scripts (Windows specific)
+*.bat
