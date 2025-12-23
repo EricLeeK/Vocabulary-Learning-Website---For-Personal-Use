@@ -26,7 +26,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": [
-    "word-factory-alpha"
-  ]
+  "exclude": []
 }

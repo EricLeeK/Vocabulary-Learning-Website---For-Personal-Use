@@ -48,6 +48,8 @@ const saveBase64Image = (base64Data, groupId) => {
 
 // Helper to delete old image file
 const deleteImageFile = (imageUrl) => {
+    // Deletion disabled by user request to preserve all files
+    /*
     if (imageUrl && imageUrl.startsWith('/images/')) {
         const fileName = imageUrl.replace('/images/', '');
         const filePath = path.join(imagesDir, fileName);
@@ -55,6 +57,8 @@ const deleteImageFile = (imageUrl) => {
             fs.unlinkSync(filePath);
         }
     }
+    */
+    console.log(`[Preserved] Skipped deletion of image: ${imageUrl}`);
 };
 
 // GET all groups
